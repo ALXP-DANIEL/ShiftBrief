@@ -1,0 +1,29 @@
+
+hello@krackeddevs.com
+11:20 PM (12 minutes ago)
+to me
+
+Hi Alif,
+
+Here's your API key for the Kracked Devs 4-day Vibe-a-thon. It's an OpenAI-compatible endpoint.
+
+In Kilo: add a Custom / OpenAI-compatible provider, paste the Base URL and API key
+below, and Kilo will auto-fetch the available models — just pick one. (Same idea for
+Cursor, the openai SDK, or curl.)
+
+  Base URL:  https://litellm.rapidscreen.io/v1
+  API key:   secret
+  Models:    claude-opus-4.6, claude-sonnet-4-6
+
+Quick test (curl):
+
+  curl https://litellm.rapidscreen.io/v1/chat/completions \
+    -H "Authorization: Bearer sk-oCqjfx_ODUkvxSCGSBBK6A" \
+    -H "Content-Type: application/json" \
+    -d '{"model":"claude-sonnet-4-6","messages":[{"role":"user","content":"hello"}]}'
+
+Notes:
+  - This key is yours — please don't share it.
+  - It has a $25 usage budget. Sonnet is cheaper than Opus; use Opus for the hard stuff.
+
+Have fun building!

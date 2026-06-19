@@ -1,0 +1,1213 @@
+SHIFTBRIEF LIVE — FULL MVP CONTEXT FOR AI BUILD ASSISTANT
+Kracked Devs 4-Day Virtual Vibe-a-thon
+Prepared for: Alif Daniel
+
+====================================================================
+0. EXECUTION SAFETY PROMPT — CREATE TODO/STATE FILE BEFORE CODING
+====================================================================
+
+Before writing or modifying any application code, the coding AI must do this first:
+
+1. Read this entire ShiftBrief Live MVP context.
+2. Inspect the current repository structure.
+3. Identify existing stack, routes, components, styling system, package manager, and available UI components.
+4. Create a persistent progress file at:
+
+.ai/SHIFTBRIEF_TODO.md
+
+If the .ai directory does not exist, create it.
+
+This file is mandatory. It must let another AI or developer continue the work if the chat reaches token limit or context is lost.
+
+The file must include these sections:
+
+# ShiftBrief Live Build State
+
+## 1. Product Goal
+Summarize the MVP goal in 5-8 lines.
+
+## 2. Current Confirmed Scope
+Separate:
+- Must-have
+- Should-have
+- Only-if-time-remains
+- Explicitly excluded
+
+## 3. Current Repository Facts
+Document:
+- framework version if detectable
+- package manager
+- important directories
+- existing route structure
+- existing UI component system
+- existing env validation pattern
+- existing lint/build commands
+
+## 4. Implementation Plan
+Write a numbered implementation plan in the exact order to execute.
+
+## 5. File Checklist
+Create a table:
+
+| File | Purpose | Status |
+|---|---|---|
+| path/to/file.ts | reason | pending/in-progress/done |
+
+## 6. Data Model
+Document:
+- ShiftRoom
+- WorkerUpdate
+- CombinedBrief
+- ShiftTask
+- BriefIssue
+- MissingInformation
+- TeamType
+- ShiftStatus
+- UpdateSource
+- Priority
+- TaskStatus
+- RiskLevel
+
+## 7. API Routes
+Document:
+- POST /api/shifts
+- GET /api/shifts/[code]
+- POST /api/shifts/[code]/updates
+- POST /api/shifts/[code]/analyze
+- PATCH /api/tasks/[id]
+- optional GET /api/ai/health
+
+For each route, write purpose, request shape, response shape, fallback behavior.
+
+## 8. Storage Strategy
+Document Supabase tables, what data is stored, seed demo behavior, fallback demo mode, and when localStorage is allowed.
+
+## 9. AI Behavior
+Document server-only AI call, required env vars, strict JSON schema, fallback parser rules, and key safety.
+
+## 10. Multi-device Recording Logic
+Document:
+- workers record separately on their own devices
+- workers join the same shift room using a code/link
+- each device submits its own transcript
+- backend stores each update under the same shift
+- AI merges worker updates into one handover
+- no live group-call recording
+- no audio storage for MVP
+
+## 11. Current Progress
+Maintain after every meaningful change:
+- [ ] Not started
+- [ ] In progress
+- [ ] Done
+- [ ] Blocked
+
+## 12. Decisions Made
+Record every important implementation decision and why.
+
+## 13. Known Issues / Blockers
+Record anything broken, risky, incomplete, or uncertain.
+
+## 14. Commands Run
+After running commands, append command, result, errors if any.
+
+## 15. Handoff Summary
+At the end of every response or major coding session, update:
+- what changed
+- files modified
+- what works now
+- what is pending
+- exact next step
+
+Critical rules:
+- Do not build auth.
+- Do not build payments.
+- Do not build WhatsApp.
+- Do not build full meeting/call recording.
+- Do not store raw audio in MVP.
+- Do not expose API keys in client code.
+- Do not create generic task manager features.
+- Keep MVP narrow: multiple worker voice updates -> transcripts -> combined shift brief -> tasks.
+- Prefer finished demo flow over extra infrastructure.
+- Use paste transcript fallback before speech recording.
+- Use polling/manual refresh before realtime subscriptions.
+
+Continuation rule:
+If context is lost, read .ai/SHIFTBRIEF_TODO.md first, inspect the repo, then continue from Handoff Summary and Current Progress.
+
+Before ending each response:
+1. Update .ai/SHIFTBRIEF_TODO.md.
+2. State exactly what was completed.
+3. State exactly what the next step is.
+4. Mention commands the user must run.
+
+====================================================================
+1. PRODUCT SUMMARY
+====================================================================
+
+Product name:
+ShiftBrief Live
+
+Tagline:
+Multiple worker voice updates. One clean team handover.
+
+Alternative tagline:
+Turn scattered worker voice updates into one clear handover.
+
+Problem statement:
+Small teams lose important shift information because each worker remembers different issues, gives rushed voice updates, and no one combines everything into one clear action plan.
+
+Target users:
+- café teams
+- retail kiosks
+- repair shops
+- cleaning teams
+- homestay operators
+- event crews
+- small warehouses
+
+Core workflow:
+manager creates shift room
+-> workers join from phone/tablet/laptop
+-> each records/pastes update separately
+-> updates are stored under one shift
+-> AI merges updates
+-> one action-ready handover brief
+-> task tracking
+
+This is not a generic task manager, meeting recorder, voice chatbot, WhatsApp tool, or full group-call app.
+
+Magic moment:
+Phone worker and tablet worker submit separate updates to the same room. Manager clicks Generate Combined Brief. The app turns scattered updates into one clean shift handover with tasks, risks, checklist, and follow-up message.
+
+====================================================================
+2. MVP SCOPE
+====================================================================
+
+Build only this:
+
+1. Manager creates shift room.
+2. App generates short room code and join link.
+3. Worker joins room from phone/tablet/laptop.
+4. Worker enters name and role.
+5. Worker records voice update or pastes transcript.
+6. Worker submits update.
+7. Manager sees worker updates appear in the shift room.
+8. Manager clicks Generate Combined Brief.
+9. AI merges all updates into structured brief.
+10. App extracts tasks.
+11. Manager can track task status.
+12. App provides non-AI fallback if AI fails.
+
+No auth.
+No payment.
+No WhatsApp.
+No calendar.
+No payroll.
+No attendance.
+No full meeting/call recording.
+No raw audio storage for MVP.
+No complex team workspace.
+
+Use Supabase because multiple devices need shared data.
+Use polling every 3-5 seconds instead of realtime WebSocket.
+
+====================================================================
+3. FOUR MAIN NAVIGATION SECTIONS
+====================================================================
+
+Preferred nav:
+- Create
+- Join
+- Briefs
+- Tasks
+
+Routes:
+/               Create shift room
+/join           Join by room code
+/join/[code]    Worker update page
+/briefs         Brief dashboard / room lookup
+/briefs/[code]  Manager dashboard for shift room
+/tasks          Extracted tasks board
+/tasks/[code]   Optional shift-specific task board
+
+If template has More instead of Tasks, use More for demo controls and link to tasks inside Briefs.
+
+====================================================================
+4. PAGE UX
+====================================================================
+
+CREATE PAGE
+Route: / or /create
+Purpose: Manager creates a shared shift room.
+Above fold:
+- ShiftBrief Live title
+- tagline
+- short explanation
+- Shift title input
+- Team type select
+- Create Room button
+- Demo Room button
+After creation:
+- Room code
+- Join link
+- Copy link button
+- Open Manager Dashboard button
+
+JOIN PAGE
+Routes: /join and /join/[code]
+Purpose: Worker joins a room and submits update.
+Above fold:
+- Room code / room title
+- Worker name input
+- Role input
+- Record button
+- Stop button
+- Transcript textarea
+- Submit Update button
+Behavior:
+- transcript textarea works first
+- SpeechRecognition can fill transcript if supported
+- worker can edit transcript before submitting
+- success state after submit
+
+BRIEFS PAGE / MANAGER DASHBOARD
+Routes: /briefs and /briefs/[code]
+Purpose: Manager monitors updates and generates combined brief.
+Above fold:
+- Shift title
+- Room code
+- Copy join link
+- Room status
+- Worker update count
+- Refresh button
+- Auto-refresh indicator
+- Worker update feed
+- Generate Combined Brief button
+Combined brief panel:
+- brief title
+- summary
+- risk level badge
+- issues
+- missing information
+- next shift checklist
+- follow-up message
+- Copy follow-up message button
+- Open Tasks button
+
+TASKS PAGE
+Route: /tasks or /tasks/[code]
+Purpose: Show extracted tasks and update statuses.
+Above fold:
+- Shift title / selected room
+- task summary cards
+- columns: To Do, In Progress, Done
+Task card:
+- title
+- priority badge
+- owner if detected
+- reason
+- status buttons/dropdown
+No drag/drop required.
+
+====================================================================
+5. TECH STACK
+====================================================================
+
+Available foundation:
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- shadcn-based UI components
+- Motion animations
+- responsive floating navigation
+- light/dark themes
+- glass UI styling
+- page transitions
+- splash screen
+- dynamic Open Graph image API
+- central site configuration and metadata helpers
+- typed environment-variable validation
+- maintenance mode
+- Biome linting and formatting
+
+Backend:
+Use Next.js Route Handlers only.
+
+Database:
+Supabase Postgres.
+
+AI:
+OpenAI-compatible chat-completions API through LiteLLM endpoint.
+Server-side only.
+
+Speech:
+Use transcript textarea as primary.
+Add browser SpeechRecognition as enhancement.
+Do not store raw audio.
+
+Sync:
+Polling every 3-5 seconds.
+Manual Refresh button as backup.
+
+====================================================================
+6. ENVIRONMENT VARIABLES
+====================================================================
+
+Server-only:
+LITELLM_BASE_URL=
+LITELLM_API_KEY=
+LITELLM_MODEL=
+SUPABASE_URL=
+SUPABASE_SERVICE_ROLE_KEY=
+
+Optional client-safe only if needed:
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+Recommended MVP:
+Use API routes with server-side Supabase service role.
+Do not put service role key in client code.
+Never prefix LITELLM_API_KEY or SUPABASE_SERVICE_ROLE_KEY with NEXT_PUBLIC_.
+
+====================================================================
+7. SUGGESTED FILE STRUCTURE
+====================================================================
+
+src/app/page.tsx
+src/app/join/page.tsx
+src/app/join/[code]/page.tsx
+src/app/briefs/page.tsx
+src/app/briefs/[code]/page.tsx
+src/app/tasks/page.tsx
+src/app/tasks/[code]/page.tsx
+src/app/api/shifts/route.ts
+src/app/api/shifts/[code]/route.ts
+src/app/api/shifts/[code]/updates/route.ts
+src/app/api/shifts/[code]/analyze/route.ts
+src/app/api/tasks/[id]/route.ts
+src/app/api/ai/health/route.ts
+
+src/components/shiftbrief/create-room-card.tsx
+src/components/shiftbrief/room-created-card.tsx
+src/components/shiftbrief/join-room-form.tsx
+src/components/shiftbrief/voice-recorder.tsx
+src/components/shiftbrief/transcript-editor.tsx
+src/components/shiftbrief/worker-update-card.tsx
+src/components/shiftbrief/worker-update-feed.tsx
+src/components/shiftbrief/manager-dashboard.tsx
+src/components/shiftbrief/analyze-progress.tsx
+src/components/shiftbrief/combined-brief-card.tsx
+src/components/shiftbrief/tasks-board.tsx
+src/components/shiftbrief/task-card.tsx
+src/components/shiftbrief/room-code-badge.tsx
+src/components/shiftbrief/demo-seed-card.tsx
+src/components/shiftbrief/copy-button.tsx
+
+src/lib/shiftbrief/types.ts
+src/lib/shiftbrief/validation.ts
+src/lib/shiftbrief/room-code.ts
+src/lib/shiftbrief/prompts.ts
+src/lib/shiftbrief/ai-schema.ts
+src/lib/shiftbrief/fallback-parser.ts
+src/lib/shiftbrief/seed-data.ts
+src/lib/shiftbrief/format.ts
+src/lib/shiftbrief/speech.ts
+src/lib/supabase/server.ts
+src/lib/supabase/queries.ts
+src/lib/env.ts
+
+src/hooks/use-shift-room.ts
+src/hooks/use-worker-updates.ts
+src/hooks/use-speech-recognition.ts
+src/hooks/use-polling.ts
+
+.ai/SHIFTBRIEF_TODO.md
+
+====================================================================
+8. CORE TYPES
+====================================================================
+
+export type TeamType =
+  | "cafe"
+  | "retail"
+  | "repair_shop"
+  | "cleaning"
+  | "event"
+  | "warehouse"
+  | "homestay"
+  | "other";
+
+export type ShiftStatus = "open" | "analyzing" | "brief_ready" | "closed";
+export type UpdateSource = "speech" | "paste" | "seed";
+export type Priority = "low" | "medium" | "high";
+export type TaskStatus = "todo" | "in_progress" | "done";
+export type RiskLevel = "low" | "medium" | "high";
+
+export type ShiftRoom = {
+  id: string;
+  code: string;
+  title: string;
+  teamType: TeamType;
+  status: ShiftStatus;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WorkerUpdate = {
+  id: string;
+  shiftId: string;
+  workerName: string;
+  role: string;
+  transcript: string;
+  source: UpdateSource;
+  createdAt: string;
+};
+
+export type ShiftTask = {
+  id: string;
+  shiftId: string;
+  title: string;
+  priority: Priority;
+  owner: string | null;
+  status: TaskStatus;
+  reason: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type BriefIssue = {
+  title: string;
+  severity: RiskLevel;
+  details: string;
+  mentionedBy: string[];
+};
+
+export type MissingInformation = {
+  question: string;
+  whyNeeded: string;
+};
+
+export type CombinedBriefAIResult = {
+  briefTitle: string;
+  summary: string;
+  riskLevel: RiskLevel;
+  tasks: Array<{
+    title: string;
+    priority: Priority;
+    owner: string | null;
+    status: "todo";
+    reason: string;
+  }>;
+  issues: BriefIssue[];
+  missingInformation: MissingInformation[];
+  nextShiftChecklist: string[];
+  followUpMessage: string;
+  confidence: number;
+};
+
+export type CombinedBrief = {
+  id: string;
+  shiftId: string;
+  briefTitle: string;
+  summary: string;
+  riskLevel: RiskLevel;
+  tasks: ShiftTask[];
+  issues: BriefIssue[];
+  missingInformation: MissingInformation[];
+  nextShiftChecklist: string[];
+  followUpMessage: string;
+  confidence: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+====================================================================
+9. SUPABASE SQL
+====================================================================
+
+create extension if not exists pgcrypto;
+
+create table if not exists shift_rooms (
+  id uuid primary key default gen_random_uuid(),
+  code text unique not null,
+  title text not null,
+  team_type text not null,
+  status text not null default 'open',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists worker_updates (
+  id uuid primary key default gen_random_uuid(),
+  shift_id uuid not null references shift_rooms(id) on delete cascade,
+  worker_name text not null,
+  role text not null,
+  transcript text not null,
+  source text not null default 'paste',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists combined_briefs (
+  id uuid primary key default gen_random_uuid(),
+  shift_id uuid not null references shift_rooms(id) on delete cascade,
+  brief_title text not null,
+  summary text not null,
+  risk_level text not null,
+  follow_up_message text not null,
+  ai_result_json jsonb not null,
+  confidence numeric not null default 0,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists shift_tasks (
+  id uuid primary key default gen_random_uuid(),
+  shift_id uuid not null references shift_rooms(id) on delete cascade,
+  title text not null,
+  priority text not null default 'medium',
+  owner text null,
+  status text not null default 'todo',
+  reason text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists idx_shift_rooms_code on shift_rooms(code);
+create index if not exists idx_worker_updates_shift_id on worker_updates(shift_id);
+create index if not exists idx_combined_briefs_shift_id on combined_briefs(shift_id);
+create index if not exists idx_shift_tasks_shift_id on shift_tasks(shift_id);
+
+====================================================================
+10. API ROUTES
+====================================================================
+
+POST /api/shifts
+Purpose: Create shift room.
+Request:
+{
+  "title": "Evening Café Shift",
+  "teamType": "cafe"
+}
+Response:
+{
+  "ok": true,
+  "data": ShiftRoom
+}
+Behavior:
+- validate title and teamType
+- generate unique room code
+- insert shift_rooms row
+- return room
+
+GET /api/shifts/[code]
+Purpose: Load room, updates, latest brief, tasks.
+Response:
+{
+  "ok": true,
+  "data": {
+    "room": ShiftRoom,
+    "updates": WorkerUpdate[],
+    "brief": CombinedBrief | null,
+    "tasks": ShiftTask[]
+  }
+}
+
+POST /api/shifts/[code]/updates
+Purpose: Submit worker update transcript.
+Request:
+{
+  "workerName": "Aina",
+  "role": "Cashier",
+  "transcript": "Customer complained coffee machine was slow.",
+  "source": "speech"
+}
+Response:
+{
+  "ok": true,
+  "data": WorkerUpdate
+}
+Validation:
+- workerName required max 80
+- role required max 80
+- transcript required min 3 max 5000
+- source default paste
+
+POST /api/shifts/[code]/analyze
+Purpose: Merge all worker updates into one handover brief.
+Request:
+{
+  "forceFallback": false
+}
+Response:
+{
+  "ok": true,
+  "mode": "ai",
+  "data": CombinedBrief
+}
+Fallback response:
+{
+  "ok": true,
+  "mode": "fallback",
+  "data": CombinedBrief,
+  "warning": "AI unavailable. Used fallback parser."
+}
+Behavior:
+- find room
+- load worker updates
+- set status analyzing
+- try AI analysis
+- fallback if AI fails
+- save combined_briefs
+- replace shift_tasks
+- set room status brief_ready
+- return brief
+
+PATCH /api/tasks/[id]
+Purpose: Update task status.
+Request:
+{
+  "status": "in_progress"
+}
+Response:
+{
+  "ok": true,
+  "data": ShiftTask
+}
+Allowed statuses: todo, in_progress, done.
+
+GET /api/ai/health optional
+Purpose: Check AI env configured without exposing secrets.
+
+====================================================================
+11. AI INPUT AND OUTPUT
+====================================================================
+
+AI input format:
+
+Shift: Evening Café Shift
+Team type: café
+
+Worker updates:
+
+[Aina - Cashier]
+Customer complained coffee machine was slow. Ali belum close cash drawer because system lag.
+
+[Farid - Kitchen]
+Plastic cups tinggal sikit. Maybe enough until morning only.
+
+[Mei - Supervisor]
+Freezer belakang bunyi kuat but still cold. Please check tomorrow morning.
+
+Create one combined handover brief.
+
+Strict AI output schema:
+{
+  "briefTitle": "string",
+  "summary": "string",
+  "riskLevel": "low|medium|high",
+  "tasks": [
+    {
+      "title": "string",
+      "priority": "low|medium|high",
+      "owner": "string|null",
+      "status": "todo",
+      "reason": "string"
+    }
+  ],
+  "issues": [
+    {
+      "title": "string",
+      "severity": "low|medium|high",
+      "details": "string",
+      "mentionedBy": ["string"]
+    }
+  ],
+  "missingInformation": [
+    {
+      "question": "string",
+      "whyNeeded": "string"
+    }
+  ],
+  "nextShiftChecklist": ["string"],
+  "followUpMessage": "string",
+  "confidence": 0.0
+}
+
+Rules:
+- confidence 0 to 1
+- tasks max 8
+- issues max 6
+- missingInformation max 5
+- checklist max 8
+- all AI-generated task status must be todo
+- merge duplicate tasks
+- keep worker attribution when useful
+- do not invent worker names or facts
+- followUpMessage must be short and team-chat-ready
+
+System prompt:
+You are ShiftBrief Live, an operations assistant for small teams.
+
+Your job is to merge multiple worker shift updates into one clear handover brief.
+
+Rules:
+- Return strict JSON only.
+- Do not include markdown.
+- Do not include explanations outside JSON.
+- Do not invent facts.
+- Do not invent worker names.
+- Merge duplicate tasks.
+- Keep worker attribution when useful.
+- Extract tasks, issues, risks, missing information, and next-shift checklist.
+- Use cautious language when details are unclear.
+- Keep output practical for a small team manager.
+- Do not act like a chatbot.
+- The brief must be action-ready.
+- The followUpMessage must be short enough to paste into a team chat.
+
+====================================================================
+12. FALLBACK PARSER
+====================================================================
+
+If AI fails, generate a useful brief from keyword rules.
+
+Stock keywords:
+stock, low, habis, tinggal sikit, restock, supplier, buy, cup, plastic, item, inventory
+-> create stock/restock task
+
+Customer keywords:
+complain, customer, waiting, angry, refund, issue
+-> create customer issue
+
+Equipment keywords:
+machine, freezer, fan, slow, broken, bunyi, leaking, error, system lag
+-> create equipment/system task
+
+Cash/admin keywords:
+cash, drawer, close, invoice, receipt, payment, system
+-> create admin/cash task
+
+Next-shift keywords:
+tomorrow, morning, esok, next shift, before opening, tonight
+-> add checklist item
+
+Priority:
+urgent/asap/today/before opening/system down/freezer/cash -> high
+customer complaint/equipment slow/stock low -> medium/high
+cleaning/arrangement/general note -> medium/low
+
+Fallback shape must match strict schema and show UI warning:
+AI unavailable. Generated using offline rules.
+
+====================================================================
+13. SPEECH RECORDING
+====================================================================
+
+Primary MVP:
+Transcript textarea.
+
+Enhancement:
+Browser SpeechRecognition:
+window.SpeechRecognition || window.webkitSpeechRecognition
+
+UI:
+- Record button
+- Stop button
+- listening indicator
+- transcript textarea
+- manual edit
+
+Do not upload raw audio.
+Do not store audio.
+Do not require recording.
+
+Risks:
+- Safari/iOS support inconsistent
+- microphone permission can fail
+- Malay-English mixed speech may be inaccurate
+
+Fallback:
+Always allow typing/pasting transcript.
+
+====================================================================
+14. POLLING / MULTI-DEVICE SYNC
+====================================================================
+
+Manager dashboard should poll:
+GET /api/shifts/[code]
+every 3-5 seconds.
+
+Also include manual Refresh button.
+
+Phone submits update -> laptop dashboard updates within 5 seconds.
+
+No WebSocket first.
+No Supabase realtime first.
+
+====================================================================
+15. ROOM CODE GENERATION
+====================================================================
+
+Generate uppercase code.
+Allowed chars:
+ABCDEFGHJKLMNPQRSTUVWXYZ23456789
+
+Avoid:
+I, O, 0, 1
+
+Length:
+4-6 chars
+
+Check uniqueness before insert.
+
+====================================================================
+16. DEMO SEED DATA
+====================================================================
+
+Seed shift:
+Evening Café Shift
+Team type: cafe
+
+Seed workers:
+
+Aina — Cashier:
+Customer complained coffee machine was slow. Ali belum close cash drawer because system lag.
+
+Farid — Kitchen:
+Plastic cups tinggal sikit. Maybe enough until morning only. Need buy tomorrow if supplier open.
+
+Mei — Supervisor:
+Freezer belakang bunyi kuat but still cold. Please check tomorrow morning before opening.
+
+Kumar — Floor:
+Table area near window still sticky after cleaning. Also one chair loose screw.
+
+Sara — Closing:
+Delivery came late so some items still not arranged. Need check invoice and store chilled items properly.
+
+Expected tasks:
+- Restock plastic cups
+- Check freezer noise
+- Confirm cash drawer closure
+- Monitor coffee machine speed
+- Reclean sticky table area
+- Fix loose chair screw
+- Check delivery invoice
+- Store chilled items properly
+
+====================================================================
+17. BUILD ORDER
+====================================================================
+
+Step 1:
+Create .ai/SHIFTBRIEF_TODO.md.
+
+Step 2:
+Setup Supabase schema.
+
+Step 3:
+Build Create page:
+- create shift room
+- generate room code
+- save to Supabase
+- show join link
+
+Step 4:
+Build Join page:
+- worker name
+- role
+- transcript textarea
+- submit update
+
+Step 5:
+Build Briefs page:
+- load room by code
+- show worker updates
+- poll every 5 seconds
+- manual refresh
+
+Step 6:
+Build AI analyze route:
+POST /api/shifts/[code]/analyze
+
+Step 7:
+Build CombinedBriefCard.
+
+Step 8:
+Build Tasks page:
+- show extracted tasks
+- update status
+
+Step 9:
+Add browser speech recognition.
+
+Step 10:
+Add demo seed room.
+
+Step 11:
+Polish and deploy.
+
+====================================================================
+18. PRIORITY TASKS
+====================================================================
+
+Must-have:
+- .ai/SHIFTBRIEF_TODO.md
+- Supabase schema
+- create shift room
+- room code/link
+- join room
+- submit transcript update
+- manager dashboard
+- polling/manual refresh
+- AI combined brief
+- fallback parser
+- extracted tasks
+- task status update
+- copy follow-up message
+- seed demo data
+- deploy
+
+Should-have:
+- browser speech recognition
+- recording timer
+- animated mic button
+- risk badges
+- update feed animation
+- AI progress steps
+- export brief as text
+- dynamic OG image
+- mobile polish
+- dark/light polish
+
+Only-if-time-remains:
+- QR code join link
+- Supabase realtime
+- audio playback
+- audio upload
+- task filtering
+- print/export image
+- manager PIN
+- worker avatars
+- shareable public brief link
+
+Explicitly excluded:
+- auth
+- payment
+- WhatsApp
+- payroll
+- attendance
+- calendar
+- long-term workspace
+- group call recording
+- audio storage
+- advanced permissions
+
+====================================================================
+19. FIRST FEATURE TO BUILD
+====================================================================
+
+Build this first:
+Create room -> join room -> submit transcript -> manager sees update.
+
+Do not build recording, AI, tasks, animations, or landing polish before this works.
+
+This proves the hard part: multi-device shared room.
+
+====================================================================
+20. FAILURE TEST
+====================================================================
+
+Simplify immediately if:
+
+1. Supabase setup takes more than 90 minutes.
+-> Use local demo mode only with simulated workers.
+
+2. Multi-device room sync breaks.
+-> Add manual Refresh button and remove auto-polling.
+
+3. Speech recognition fails on phone/tablet.
+-> Make paste transcript primary and recording optional.
+
+4. AI output unstable.
+-> Reduce schema to summary, tasks, checklist, followUpMessage.
+
+5. Task board takes too long.
+-> Use simple task list with status dropdown.
+
+6. Demo across multiple devices is unreliable.
+-> Use Demo Mode on one laptop showing simulated phone/tablet update cards.
+
+7. You start adding auth, team management, audio storage, realtime, or notifications.
+-> Stop. Return to room -> updates -> combined brief -> tasks.
+
+====================================================================
+21. DEMO SCRIPT
+====================================================================
+
+0:00-0:20
+Show problem:
+Small teams do not write perfect shift reports. Each worker knows different issues, and managers waste time collecting scattered updates.
+
+0:20-0:40
+Manager creates Evening Café Shift on laptop.
+Show room code and join link.
+
+0:40-1:10
+Worker joins from phone as Aina / Cashier.
+Record or paste:
+Customer complained coffee machine was slow. Ali belum close cash drawer because system lag.
+Submit update.
+
+1:10-1:30
+Worker joins from tablet as Farid / Kitchen.
+Record or paste:
+Plastic cups tinggal sikit. Maybe enough until morning only.
+Submit update.
+
+1:30-1:50
+Manager dashboard shows updates appearing under same room.
+Use Refresh if polling is slow.
+
+1:50-2:15
+Click Generate Combined Brief.
+Show analysis progress.
+
+2:15-2:40
+Show final handover:
+- summary
+- risk level
+- tasks
+- issues
+- next-shift checklist
+- follow-up message
+
+2:40-2:55
+Open Tasks.
+Move Restock plastic cups to In Progress.
+Copy follow-up message.
+
+2:55-3:00
+Close:
+ShiftBrief Live turns scattered worker voice updates into one action-ready team handover.
+
+====================================================================
+22. README INTRODUCTION
+====================================================================
+
+# ShiftBrief Live
+
+ShiftBrief Live helps small teams turn scattered worker voice updates into one clear shift handover.
+
+In many small businesses, every worker remembers a different part of the shift. The cashier knows a customer complained. The kitchen knows stock is low. The supervisor knows equipment needs checking. These updates are usually spoken quickly, forgotten, or scattered across devices.
+
+ShiftBrief Live creates a shared shift room where workers can join from phone, tablet, or laptop and submit short updates. The app merges those updates into:
+
+- one shift summary
+- tasks
+- issues
+- risk flags
+- missing information
+- next-shift checklist
+- follow-up message
+
+The app follows a focused operational flow:
+
+scattered worker updates -> structured handover -> trackable tasks
+
+====================================================================
+23. FINAL X SUBMISSION COPY
+====================================================================
+
+Introducing ShiftBrief Live.
+
+Problem: Small teams lose important shift information because each worker knows different issues, but no one combines everything into one clear handover.
+
+ShiftBrief Live lets workers submit voice updates from different devices, then turns those scattered updates into one action-ready handover with tasks, risks, checklist, and a follow-up message.
+
+Demo: [demo video link]
+Live: [live link]
+Repo: [GitHub link]
+Build thread: [thread link]
+
+AI tools used:
+- ChatGPT
+- OpenAI-compatible LiteLLM endpoint
+- [add coding tools used]
+
+@KrackedDevs #KrackedDevsVibeathon
+
+====================================================================
+24. BUILD THREAD POSTS
+====================================================================
+
+Day 1:
+Day 1/4 — starting ShiftBrief Live.
+
+Small teams do not write perfect shift reports. Each worker remembers different issues, and managers have to piece everything together manually.
+
+I’m building a shared room where workers submit short voice updates and AI turns them into one clean handover.
+
+@KrackedDevs #KrackedDevsVibeathon
+
+Day 2:
+Day 2/4 — core room flow working.
+
+Manager creates a shift room.
+Workers join from phone/tablet.
+Each submits their own update.
+The dashboard collects everything under one shift.
+
+Next: AI-generated combined handover.
+
+@KrackedDevs #KrackedDevsVibeathon
+
+Day 3:
+Day 3/4 — handover generation added.
+
+ShiftBrief Live now merges scattered worker updates into:
+- summary
+- risks
+- tasks
+- missing info
+- next-shift checklist
+- follow-up message
+
+Next: task board and demo polish.
+
+@KrackedDevs #KrackedDevsVibeathon
+
+Day 4:
+Day 4/4 — ShiftBrief Live is ready.
+
+Multiple worker updates from different devices become one action-ready team handover.
+
+Final demo and live link coming in the submission post.
+
+@KrackedDevs #KrackedDevsVibeathon
+
+====================================================================
+25. AI TOOLS USED LIST
+====================================================================
+
+Use only what is true.
+
+AI tools used:
+- ChatGPT for product strategy, UX planning, copywriting, and implementation planning
+- OpenAI-compatible LiteLLM endpoint for structured handover generation inside the app
+- [Claude / Cursor / Kilo Code / other coding assistant, if used]
+
+====================================================================
+26. FINAL DECISION
+====================================================================
+
+Build ShiftBrief Live.
+
+Reason:
+It is more original than FixFlow, has a stronger multi-device demo, fits the operational theme, and creates a clear before-versus-after story.
+
+Core promise:
+Multiple workers submit scattered voice updates.
+ShiftBrief Live creates one clear handover.

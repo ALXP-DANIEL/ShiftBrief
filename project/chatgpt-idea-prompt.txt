@@ -1,0 +1,191 @@
+I am participating in the Kracked Devs 4-Day Virtual Vibe-a-thon. Act as a pragmatic hackathon product strategist, UX designer, and senior full-stack engineer. Help me choose a strong app idea that can be built, polished, deployed, and demonstrated before the deadline.
+
+HACKATHON CONTEXT
+
+- Challenge period: June 17, 2026 at 10:00 PM GMT+8 through June 21, 2026 at 9:59 PM GMT+8.
+- Submission deadline: June 21, 2026 at 9:59 PM GMT+8.
+- Community voting: June 21, 2026 at 11:59 PM GMT+8 through June 23, 2026 at 11:59 PM GMT+8.
+- This is a short build sprint, so scope discipline and a compelling working demo matter more than a large feature list.
+- The project may be open source, but that is optional.
+- I must share daily progress updates on X, tag @KrackedDevs, and use #KrackedDevsVibeathon.
+- The final X submission must include:
+  - Project name
+  - One-sentence problem statement
+  - A 2–3 minute demo video
+  - A live product link or GitHub repository
+  - A link to the build thread
+  - AI tools used
+- I must join the Kracked Devs Discord and Zealy community and paste the submission links into the relevant Zealy tasks.
+
+THEME
+
+Build a solution to an everyday operational problem that slows people down, especially:
+
+- Small teams
+- Small businesses
+- Solo operators
+- Day-to-day operations
+
+Good problem areas include:
+
+- Work still performed manually
+- Important tasks being forgotten or delayed
+- Communication fragmented across too many tools
+- Simple processes taking too much time
+- Teams relying on spreadsheets, WhatsApp, paper, or memory
+- Repetitive workflows that can be made faster, smarter, clearer, or automated
+
+AVAILABLE TECHNICAL FOUNDATION
+
+I already have a polished application template, so do not spend the idea budget on basic setup.
+
+- Next.js 16 App Router
+- React 19
+- TypeScript
+- Tailwind CSS 4
+- shadcn-based UI components
+- Motion animations
+- Responsive floating navigation
+- Light and dark themes
+- Glass UI styling
+- Page transitions
+- Splash screen
+- Dynamic Open Graph image API
+- Central site configuration and metadata helpers
+- Typed environment-variable validation
+- Maintenance mode
+- Biome linting and formatting
+
+Current navigation placeholders are:
+
+- Home
+- Browse
+- Search
+- More
+
+These routes can be renamed or reinterpreted to fit the product. Prefer an idea that maps naturally to four simple primary sections.
+
+AI AVAILABILITY
+
+- An OpenAI-compatible chat-completions API is available through a LiteLLM endpoint.
+- Never put its API key in client-side code, source control, screenshots, demo recordings, prompts, or generated output.
+- AI should solve a specific workflow problem, not exist as a generic chatbot.
+- Prefer structured AI output, extraction, summarization, prioritization, drafting, classification, or action generation.
+- The app must still provide value when AI is unavailable or returns an error.
+
+IDEA REQUIREMENTS
+
+Generate ideas that:
+
+1. Solve a recognizable and specific operational pain.
+2. Have a clearly identifiable first user, such as a food seller, repair shop, event organizer, freelancer, home-service business, small retail team, tuition center, volunteer group, property manager, or community organization.
+3. Replace or improve a workflow currently handled through WhatsApp, spreadsheets, forms, paper, or memory.
+4. Can produce a visually clear before-versus-after story in a 2–3 minute demo.
+5. Have one memorable “magic moment.”
+6. Are realistic for one developer to finish within the remaining hackathon time.
+7. Do not require marketplace liquidity, complex payments, regulated medical/legal decisions, hardware, large proprietary datasets, or many external integrations.
+8. Avoid generic task managers, generic CRM systems, generic note apps, and generic AI chat wrappers unless they have a very narrow and original operational use case.
+9. Can start with local/sample data if a production database would slow delivery.
+10. Have an obvious path from prototype to a useful real product.
+
+DESIRED PRODUCT SHAPE
+
+Prefer a focused workflow:
+
+messy input -> structured understanding -> prioritized action -> trackable outcome
+
+Examples of acceptable messy input:
+
+- A pasted WhatsApp conversation
+- Voice-note transcript
+- Customer request
+- Order list
+- Staff update
+- Incident report
+- Shift handover notes
+- Photos plus short descriptions
+- Unstructured spreadsheet rows
+
+The strongest idea should ideally:
+
+- Create structured records from messy information
+- Identify missing information or risks
+- Recommend the next action
+- Generate a useful message, checklist, quote, schedule, or handover
+- Keep a simple status trail
+- Save measurable time or prevent a costly mistake
+
+YOUR TASK
+
+First, generate 10 distinct app ideas. For each idea provide:
+
+- Product name
+- Target user
+- One-sentence problem statement
+- Current broken workflow
+- Proposed workflow
+- Core AI role, if any
+- The demo’s magic moment
+- Four primary navigation sections
+- MVP features that can be completed during the hackathon
+- Features explicitly excluded from the MVP
+- Main technical risk
+- Why community voters would understand and care about it
+
+Then score every idea from 1–10 on:
+
+- Problem clarity
+- Real-world usefulness
+- Originality
+- Four-day feasibility
+- Demo quality
+- Visual potential
+- AI usefulness rather than gimmick
+- Potential to continue after the hackathon
+
+Use a weighted final score that prioritizes:
+
+- Four-day feasibility: 25%
+- Demo quality: 20%
+- Problem clarity: 15%
+- Real-world usefulness: 15%
+- AI usefulness: 10%
+- Originality: 5%
+- Visual potential: 5%
+- Post-hackathon potential: 5%
+
+After scoring:
+
+1. Select the best idea.
+2. Explain concretely why it wins over the second- and third-place ideas.
+3. Reduce it to the smallest impressive MVP.
+4. Define the exact target user and one realistic scenario.
+5. Write the complete 2–3 minute demo storyline.
+6. Design the four main pages and describe what appears above the fold on each page.
+7. Define the core data model in plain English.
+8. Define the AI input and a strict JSON output schema.
+9. Explain the non-AI fallback behavior.
+10. Provide a build plan from now until June 21, 2026 at 9:59 PM GMT+8.
+11. Separate tasks into must-have, should-have, and only-if-time-remains.
+12. Identify the first feature I should build to test whether the idea actually works.
+13. Provide five realistic seed-data examples for the demo.
+14. Write:
+    - A concise project name and tagline
+    - One-sentence problem statement
+    - A short README introduction
+    - Final X submission copy
+    - Four daily/build-thread update posts
+    - A list of AI tools used
+15. Give a blunt “failure test”: the conditions under which I should abandon or simplify the idea within the first few hours.
+
+RESPONSE STYLE
+
+- Be specific and operational.
+- Challenge weak assumptions.
+- Do not recommend unnecessary infrastructure.
+- Do not propose ten variations of the same idea.
+- Prefer workflows with visible state changes and satisfying demo interactions.
+- Keep the selected MVP narrow enough to finish.
+- State what should be mocked or simplified.
+- Use tables where they improve comparison.
+- End with one decisive recommendation, not “it depends.”

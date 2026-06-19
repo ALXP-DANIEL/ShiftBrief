@@ -1,0 +1,17 @@
+​What You Should Be Building
+​We want you to build for solutions to everyday problems that slow people down—especially in small teams, small businesses, and day-to-day operations.
+
+​Think about situations where:
+​Work is still being done manually
+
+​Important tasks get forgotten or delayed
+
+​Communication happens across too many tools
+
+​Simple processes take too much time
+
+​People rely on spreadsheets, WhatsApp, or memory to run things
+
+​Your job is to turn one of these messy, repetitive, or inefficient workflows into something faster, smarter, or more automated.
+
+​You decide what to build—but the best projects will usually come from real-world operational pain that people deal with every day.
