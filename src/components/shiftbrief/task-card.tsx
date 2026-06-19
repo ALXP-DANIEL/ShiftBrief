@@ -1,6 +1,9 @@
 "use client";
 
+import type { DraggableSyntheticListeners } from "@dnd-kit/core";
+import { DotsSixVerticalIcon } from "@phosphor-icons/react/dist/ssr/DotsSixVertical";
 import { UserIcon } from "@phosphor-icons/react/dist/ssr/User";
+import type { CSSProperties, HTMLAttributes } from "react";
 import { taskStatusLabel } from "@/lib/shiftbrief/format";
 import type { ShiftTask, TaskStatus } from "@/lib/shiftbrief/types";
 import { cn } from "@/lib/utils";
@@ -12,28 +15,59 @@ type TaskCardProps = {
   task: ShiftTask;
   onStatusChange: (taskId: string, status: TaskStatus) => void;
   pending?: boolean;
+  dragging?: boolean;
+  dragHandleProps?: {
+    attributes: HTMLAttributes<HTMLButtonElement>;
+    listeners?: DraggableSyntheticListeners;
+  };
+  style?: CSSProperties;
 };
 
-export function TaskCard({ task, onStatusChange, pending }: TaskCardProps) {
+export function TaskCard({
+  task,
+  onStatusChange,
+  pending,
+  dragging,
+  dragHandleProps,
+  style,
+}: TaskCardProps) {
   return (
     <article
+      style={style}
       className={cn(
-        "glass-tile rounded-2xl p-3.5 transition-opacity",
+        "glass-tile rounded-2xl p-3.5 transition-[opacity,box-shadow,transform]",
         pending && "opacity-60",
         task.status === "done" && "opacity-80",
+        dragging && "opacity-0",
       )}
     >
       <div className="flex items-start justify-between gap-2">
-        <p
-          className={cn(
-            "text-sm font-medium",
-            task.status === "done" &&
-              "line-through decoration-muted-foreground",
+        <div className="flex min-w-0 items-start gap-1.5">
+          {dragHandleProps && (
+            <button
+              type="button"
+              aria-label={`Drag ${task.title}`}
+              disabled={pending}
+              className="-ml-1.5 mt-0.5 touch-none rounded-md p-1 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed"
+              {...dragHandleProps.attributes}
+              {...dragHandleProps.listeners}
+            >
+              <DotsSixVerticalIcon size={16} weight="bold" />
+            </button>
           )}
-        >
-          {task.title}
-        </p>
-        <PriorityBadge priority={task.priority} />
+          <p
+            className={cn(
+              "text-sm font-medium",
+              task.status === "done" &&
+                "line-through decoration-muted-foreground",
+            )}
+          >
+            {task.title}
+          </p>
+        </div>
+        <div className="shrink-0">
+          <PriorityBadge priority={task.priority} />
+        </div>
       </div>
 
       {task.reason && (
