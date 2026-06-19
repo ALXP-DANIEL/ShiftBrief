@@ -12,6 +12,24 @@
   --glass-active: oklch(1 0 0 / 12%);
 }
 
+/* Soft ambient backdrop so glass panels have depth to blur against. Neutral and
+   theme-aware to stay on-brand with the monochrome palette. */
+body {
+  background-image:
+    radial-gradient(
+      72% 55% at 50% -8%,
+      color-mix(in oklch, var(--foreground) 7%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(
+      45% 40% at 100% 105%,
+      color-mix(in oklch, var(--foreground) 5%, transparent),
+      transparent 70%
+    );
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+}
+
 .glass {
   background: var(--glass-bg);
   border: 1px solid var(--glass-border);
@@ -22,4 +40,50 @@
     background-color 0.5s ease,
     border-color 0.5s ease,
     box-shadow 0.5s ease;
+}
+
+/* Lightweight surface for items nested inside a .glass panel. Translucent so
+   the panel shows through, without stacking another heavy backdrop blur. */
+.glass-tile {
+  background: color-mix(in oklch, var(--card) 62%, transparent);
+  border: 1px solid var(--glass-border);
+  transition:
+    background-color 0.5s ease,
+    border-color 0.5s ease;
+}
+
+.glass-tile-hover:hover {
+  background: color-mix(in oklch, var(--card) 80%, transparent);
+}
+
+@keyframes voice-wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+    opacity: 0.45;
+  }
+  50% {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+}
+
+.voice-wave-bar {
+  transform-origin: center;
+  animation: voice-wave 0.9s ease-in-out infinite;
+}
+
+@keyframes shiftbrief-sky-drift {
+  from {
+    transform: translate3d(-6%, 0, 0);
+  }
+  to {
+    transform: translate3d(6%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-wave-bar {
+    animation: none;
+  }
 }

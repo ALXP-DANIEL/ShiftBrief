@@ -20,7 +20,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={`Switch to ${isDark ? "light" : "dark"} mode`}
-      className="glass relative grid size-10 place-items-center overflow-hidden rounded-full text-foreground"
+      className="glass relative grid size-8 place-items-center overflow-hidden rounded-full border border-border bg-background text-foreground transition-colors hover:bg-muted dark:border-input dark:bg-input/30 dark:hover:bg-input/50"
     >
       <AnimatePresence initial={false}>
         <motion.span

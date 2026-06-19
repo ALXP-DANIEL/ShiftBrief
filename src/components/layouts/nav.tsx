@@ -1,36 +1,127 @@
 "use client";
 
 import type { Icon } from "@phosphor-icons/react";
-import { DotsThreeOutline } from "@phosphor-icons/react/dist/ssr/DotsThreeOutline";
-import { House } from "@phosphor-icons/react/dist/ssr/House";
-import { MagnifyingGlass } from "@phosphor-icons/react/dist/ssr/MagnifyingGlass";
-import { Sparkle } from "@phosphor-icons/react/dist/ssr/Sparkle";
-import { SquaresFour } from "@phosphor-icons/react/dist/ssr/SquaresFour";
+import { ClipboardTextIcon } from "@phosphor-icons/react/dist/ssr/ClipboardText";
+import { HouseIcon } from "@phosphor-icons/react/dist/ssr/House";
+import { ListChecksIcon } from "@phosphor-icons/react/dist/ssr/ListChecks";
+import { SignOutIcon } from "@phosphor-icons/react/dist/ssr/SignOut";
+import { SparkleIcon } from "@phosphor-icons/react/dist/ssr/Sparkle";
 import * as motion from "motion/react-client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useState } from "react";
+import { ResponsiveDialog } from "@/components/ui/responsive-dialog";
+import { Button } from "@/components/ui/shadcn/button";
+import { clearAppAccess } from "@/lib/shiftbrief/access";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "../ui/theme-toggle";
+import { useAppAccess } from "./app-access-gate";
 
 const SWIPE_DISTANCE = 36;
 const SWIPE_VELOCITY = 450;
 
 const ITEMS: {
   id: string;
-  href: string;
+  baseHref: string;
   label: string;
   Icon: Icon;
 }[] = [
-  { id: "home", href: "/", label: "Home", Icon: House },
-  { id: "browse", href: "/browse", label: "Browse", Icon: SquaresFour },
-  { id: "search", href: "/search", label: "Search", Icon: MagnifyingGlass },
-  { id: "more", href: "/more", label: "More", Icon: DotsThreeOutline },
+  {
+    id: "home",
+    baseHref: "/room",
+    label: "Home",
+    Icon: HouseIcon,
+  },
+  {
+    id: "briefs",
+    baseHref: "/briefs",
+    label: "Briefs",
+    Icon: ClipboardTextIcon,
+  },
+  {
+    id: "tasks",
+    baseHref: "/tasks",
+    label: "Tasks",
+    Icon: ListChecksIcon,
+  },
 ];
+
+function LeaveRoomButton() {
+  const router = useRouter();
+  const [confirming, setConfirming] = useState(false);
+
+  function leaveRoom() {
+    clearAppAccess();
+    router.replace("/");
+  }
+
+  return (
+    <>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="glass rounded-full"
+        onClick={() => setConfirming(true)}
+        aria-label="Leave room"
+        title="Leave room"
+      >
+        <SignOutIcon size={18} weight="bold" />
+      </Button>
+      {confirming && (
+        <ResponsiveDialog labelledBy="leave-room-title">
+          <h2
+            id="leave-room-title"
+            className="text-xl font-bold tracking-tight"
+          >
+            Leave this room?
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            You will return to the entry page. Admins can restore access later
+            using the room code and PIN.
+          </p>
+          <div className="mt-6 grid gap-2 sm:grid-cols-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="rounded-full"
+              onClick={() => setConfirming(false)}
+            >
+              Stay
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              size="lg"
+              className="rounded-full"
+              onClick={leaveRoom}
+            >
+              Leave room
+            </Button>
+          </div>
+        </ResponsiveDialog>
+      )}
+    </>
+  );
+}
+
+function isActiveHref(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function NavLinks({ layoutScope }: { layoutScope: string }) {
   const pathname = usePathname();
   const router = useRouter();
-  const activeIndex = ITEMS.findIndex(({ href }) => href === pathname);
+  const { activeRoomCode } = useAppAccess();
+  const items = ITEMS.map((item) => ({
+    ...item,
+    href: `${item.baseHref}/${activeRoomCode}`,
+  }));
+  const activeIndex = items.findIndex(({ baseHref }) =>
+    isActiveHref(pathname, baseHref),
+  );
 
   function handlePanEnd(
     _: MouseEvent | TouchEvent | PointerEvent,
@@ -41,10 +132,10 @@ function NavLinks({ layoutScope }: { layoutScope: string }) {
     const movedRight =
       info.offset.x >= SWIPE_DISTANCE || info.velocity.x >= SWIPE_VELOCITY;
 
-    if (movedLeft && activeIndex < ITEMS.length - 1) {
-      router.push(ITEMS[activeIndex + 1].href);
+    if (movedLeft && activeIndex < items.length - 1) {
+      router.push(items[activeIndex + 1].href);
     } else if (movedRight && activeIndex > 0) {
-      router.push(ITEMS[activeIndex - 1].href);
+      router.push(items[activeIndex - 1].href);
     }
   }
 
@@ -53,8 +144,8 @@ function NavLinks({ layoutScope }: { layoutScope: string }) {
       onPanEnd={handlePanEnd}
       className="glass relative z-20 flex touch-pan-y items-center justify-between gap-1 rounded-full p-1.5 text-foreground lg:justify-start lg:gap-0.5 lg:p-1 lg:shadow-none"
     >
-      {ITEMS.map(({ id, href, label, Icon }) => {
-        const isActive = pathname === href;
+      {items.map(({ id, baseHref, href, label, Icon }) => {
+        const isActive = isActiveHref(pathname, baseHref);
 
         return (
           <Link
@@ -96,9 +187,54 @@ function NavLinks({ layoutScope }: { layoutScope: string }) {
 }
 
 export function Nav() {
+  const pathname = usePathname();
+  const { activeRoomCode, hasAccess, role } = useAppAccess();
+
+  if (pathname === "/") return null;
+
+  if (role === "worker") {
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 lg:px-10 xl:px-16">
+        <Link
+          href={`/room/${activeRoomCode}`}
+          className="flex items-center gap-2 text-[var(--shift-home-text)]"
+        >
+          <SparkleIcon weight="fill" size={18} />
+          <span className="text-xs font-bold tracking-[0.16em] uppercase">
+            ShiftBrief
+          </span>
+        </Link>
+        <div className="flex items-center gap-2">
+          <LeaveRoomButton />
+          <ThemeToggle />
+        </div>
+      </div>
+    );
+  }
+
+  if (!hasAccess) {
+    return (
+      <div className="fixed inset-x-0 top-0 z-50 flex justify-end px-4 pt-[max(0.75rem,env(safe-area-inset-top))]">
+        <div className="flex items-center gap-2">
+          <LeaveRoomButton />
+          <ThemeToggle />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-50 flex justify-end px-4 pt-[max(0.75rem,env(safe-area-inset-top))] lg:hidden">
+      <div className="fixed inset-x-0 top-0 z-50 flex items-center justify-between px-5 pt-[max(1rem,env(safe-area-inset-top))] sm:px-6 lg:hidden">
+        <Link
+          href={`/room/${activeRoomCode}`}
+          className="flex items-center gap-2 text-[var(--shift-home-text)]"
+        >
+          <SparkleIcon weight="fill" size={18} />
+          <span className="text-xs font-bold tracking-[0.16em] uppercase">
+            ShiftBrief
+          </span>
+        </Link>
         <ThemeToggle />
       </div>
 
@@ -107,13 +243,17 @@ export function Nav() {
       </div>
 
       <div className="fixed inset-x-0 top-0 z-50 hidden items-center justify-between px-8 py-4 lg:flex xl:px-12">
-        <div className="glass flex items-center gap-2.5 rounded-full px-3.5 py-2 text-foreground">
-          <Sparkle weight="fill" size={20} />
-          <span className="text-base font-bold tracking-tight">my_app</span>
-        </div>
+        <Link
+          href={`/room/${activeRoomCode}`}
+          className="glass flex items-center gap-2.5 rounded-full px-3.5 py-2 text-foreground"
+        >
+          <SparkleIcon weight="fill" size={20} />
+          <span className="text-base font-bold tracking-tight">ShiftBrief</span>
+        </Link>
 
         <div className="flex items-center gap-2">
           <NavLinks layoutScope="desktop-nav" />
+          <LeaveRoomButton />
           <ThemeToggle />
         </div>
       </div>

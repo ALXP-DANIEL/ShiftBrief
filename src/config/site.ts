@@ -2,10 +2,18 @@ import { env } from "@/env";
 import type { SiteConfig } from "@/types/site";
 
 export const siteConfig: SiteConfig = {
-  name: "my_app",
+  name: "ShiftBrief",
   author: "ALXP-DANIEL",
-  description: "A modern web application built with Next.js.",
-  keywords: ["my_app", "web application"],
+  description:
+    "Multiple worker voice updates. One clean team handover. ShiftBrief merges scattered shift updates into a single action-ready brief with tasks, risks, and a follow-up message.",
+  keywords: [
+    "ShiftBrief",
+    "shift handover",
+    "team operations",
+    "small business",
+    "voice updates",
+    "AI handover",
+  ],
   url: {
     base: env.NEXT_PUBLIC_SITE_URL,
     author: "https://alifdaniel.dpdns.org",

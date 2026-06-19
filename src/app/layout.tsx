@@ -2,9 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { JetBrains_Mono } from "next/font/google";
 import { ViewTransition } from "react";
 import "@/styles/globals.css";
+import { AppAccessGate } from "@/components/layouts/app-access-gate";
 import { Nav } from "@/components/layouts/nav";
 import SplashGate from "@/components/layouts/splash-gate";
 import { ThemeProvider } from "@/components/providers/theme-provider";
+import { ShiftHomeBackground } from "@/components/shiftbrief/shift-home-background";
 import { siteConfig } from "@/config/site";
 import { env } from "@/env";
 import { cn } from "@/lib/utils";
@@ -70,12 +72,15 @@ export default function RootLayout({
     >
       <body className="min-h-full font-mono">
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          <ShiftHomeBackground />
           {isMaintenance ? (
             <Maintenance />
           ) : (
             <SplashGate>
-              <Nav />
-              <ViewTransition default="page-fade">{children}</ViewTransition>
+              <AppAccessGate>
+                <Nav />
+                <ViewTransition default="page-fade">{children}</ViewTransition>
+              </AppAccessGate>
             </SplashGate>
           )}
         </ThemeProvider>
