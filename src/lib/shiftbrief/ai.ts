@@ -65,6 +65,77 @@ export async function generateHeadlineWithAI(context: string): Promise<string> {
   }
 }
 
+export async function generatePulseWithAI(
+  updates: Pick<WorkerUpdate, "id" | "transcript">[],
+): Promise<Array<{ id: string; message: string }>> {
+  if (!isAIConfigured()) throw new Error("AI is not configured");
+
+  const baseUrl = env.AI_BASE_URL?.replace(/\/$/, "");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.AI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: env.AI_MODEL,
+        temperature: 0.2,
+        max_tokens: 300,
+        reasoning_effort: "none",
+        response_format: { type: "json_object" },
+        messages: [
+          {
+            role: "system",
+            content:
+              'Turn each shift update into one anonymous operational activity phrase. Preserve useful context, but never include names, roles, quotes, personal information, or exact transcript wording. Use 3 to 7 words, sentence case, no ending punctuation. Return only JSON: {"items":[{"id":"input id","message":"phrase"}]}',
+          },
+          {
+            role: "user",
+            content: JSON.stringify(
+              updates.map(({ id, transcript }) => ({ id, transcript })),
+            ),
+          },
+        ],
+      }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) throw new Error(`AI request failed: ${response.status}`);
+    const payload = (await response.json()) as {
+      choices?: Array<{ message?: { content?: string } }>;
+    };
+    const content = payload.choices?.[0]?.message?.content;
+    if (!content) throw new Error("AI response had no pulse content");
+
+    const parsed = JSON.parse(extractJson(content)) as {
+      items?: Array<{ id?: unknown; message?: unknown }>;
+    };
+    const validIds = new Set(updates.map((update) => update.id));
+
+    return (parsed.items ?? [])
+      .filter(
+        (item): item is { id: string; message: string } =>
+          typeof item.id === "string" &&
+          validIds.has(item.id) &&
+          typeof item.message === "string",
+      )
+      .map((item) => ({
+        id: item.id,
+        message: item.message
+          .replace(/^[\s"'`]+|[\s"'`.!]+$/g, "")
+          .replace(/\s+/g, " ")
+          .slice(0, 72),
+      }))
+      .filter((item) => item.message.length > 0);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 /** Pull the first balanced JSON object out of a model response. */
 function extractJson(content: string): string {
   const withoutFences = content

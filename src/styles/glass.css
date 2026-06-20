@@ -86,4 +86,30 @@ body {
   .voice-wave-bar {
     animation: none;
   }
+
+  .team-pulse-item {
+    animation: none;
+    opacity: 0.58;
+  }
+}
+
+@keyframes team-pulse-drift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 18px, 0);
+  }
+  18%,
+  68% {
+    opacity: 0.68;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(-34px, -22px, 0);
+  }
+}
+
+.team-pulse-item {
+  animation-name: team-pulse-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
 }

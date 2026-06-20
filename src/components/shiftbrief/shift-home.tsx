@@ -10,6 +10,7 @@ import { TeamTypeBadge } from "./badges";
 import { CopyButton } from "./copy-button";
 import { HomeVoiceUpdate } from "./home-voice-update";
 import { RoomCodeBadge } from "./room-code-badge";
+import { type PulseItem, TeamPulse } from "./team-pulse";
 
 const TEAM_HEADLINES: Record<TeamType, string[]> = {
   cafe: [
@@ -100,11 +101,12 @@ function useLocalTime() {
 export function ShiftHome({ code }: { code: string }) {
   const { role } = useAppAccess();
   const { bundle, refresh } = useShiftRoom(code, {
-    poll: role === "admin",
-    intervalMs: 4000,
+    poll: true,
+    intervalMs: role === "admin" ? 4000 : 6000,
   });
   const time = useLocalTime();
   const [aiHeadline, setAiHeadline] = useState<string | null>(null);
+  const [pulseItems, setPulseItems] = useState<PulseItem[]>([]);
   const [joinUrl, setJoinUrl] = useState(`/join/${code}`);
   const requestedContext = useRef("");
   const roomTitle = bundle?.room.title ?? "Loading your shift…";
@@ -122,6 +124,11 @@ export function ShiftHome({ code }: { code: string }) {
         bundle.tasks.map((task) => `${task.id}:${task.status}`).join(","),
       ].join(":")
     : "";
+  const pulseVersion =
+    bundle?.updates
+      .slice(-6)
+      .map((update) => update.id)
+      .join(",") ?? "";
 
   useEffect(() => {
     setJoinUrl(`${window.location.origin}/join/${code}`);
@@ -156,8 +163,34 @@ export function ShiftHome({ code }: { code: string }) {
     return () => controller.abort();
   }, [code, contextVersion, updateCount]);
 
+  useEffect(() => {
+    if (!pulseVersion) {
+      setPulseItems([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    fetch(`/api/shifts/${encodeURIComponent(code)}/pulse`, {
+      signal: controller.signal,
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return (await response.json()) as {
+          data?: { items?: PulseItem[] };
+        };
+      })
+      .then((payload) => {
+        if (payload?.data?.items) setPulseItems(payload.data.items);
+      })
+      .catch(() => {});
+
+    return () => controller.abort();
+  }, [code, pulseVersion]);
+
   return (
     <main className="relative flex min-h-dvh w-full flex-col overflow-x-hidden text-[var(--shift-home-text)]">
+      <TeamPulse items={pulseItems} />
       <div
         className={
           role === "worker"
