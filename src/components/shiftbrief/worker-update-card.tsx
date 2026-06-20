@@ -3,7 +3,9 @@
 import { KeyboardIcon } from "@phosphor-icons/react/dist/ssr/Keyboard";
 import { MicrophoneIcon } from "@phosphor-icons/react/dist/ssr/Microphone";
 import { SparkleIcon } from "@phosphor-icons/react/dist/ssr/Sparkle";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/shadcn/badge";
+import { fetchUpdateAudio } from "@/lib/shiftbrief/client";
 import { relativeTime } from "@/lib/shiftbrief/format";
 import type { UpdateSource, WorkerUpdate } from "@/lib/shiftbrief/types";
 import { AudioScrubber } from "./audio-scrubber";
@@ -30,6 +32,19 @@ function initials(name: string): string {
 export function WorkerUpdateCard({ update }: { update: WorkerUpdate }) {
   const meta = SOURCE_META[update.source] ?? SOURCE_META.paste;
   const { Icon } = meta;
+  const [audioSrc, setAudioSrc] = useState<string | null>(null);
+
+  // Fetch the voice note once, on demand — never in the polled list payload.
+  useEffect(() => {
+    if (!update.hasAudio) return;
+    let active = true;
+    fetchUpdateAudio(update.id).then((src) => {
+      if (active) setAudioSrc(src);
+    });
+    return () => {
+      active = false;
+    };
+  }, [update.hasAudio, update.id]);
 
   return (
     <article className="glass-tile rounded-2xl p-4">
@@ -49,7 +64,7 @@ export function WorkerUpdateCard({ update }: { update: WorkerUpdate }) {
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
             {update.transcript}
           </p>
-          {update.audioDataUrl && <AudioScrubber src={update.audioDataUrl} />}
+          {audioSrc && <AudioScrubber src={audioSrc} />}
           <p className="mt-2 text-[11px] text-muted-foreground">
             {relativeTime(update.createdAt)}
           </p>

@@ -33,7 +33,9 @@ export type WorkerUpdate = {
   workerName: string;
   role: string;
   transcript: string;
-  audioDataUrl: string | null;
+  /** Whether a voice note is attached. The audio itself is fetched on demand
+   * (GET /api/updates/[id]/audio) so it never rides along in the polled list. */
+  hasAudio: boolean;
   source: UpdateSource;
   createdAt: string;
 };

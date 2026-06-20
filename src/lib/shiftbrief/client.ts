@@ -97,6 +97,22 @@ export async function submitUpdate(
   return data;
 }
 
+/** Lazily fetch one update's voice note (only when the user wants to hear it). */
+export async function fetchUpdateAudio(
+  updateId: string,
+): Promise<string | null> {
+  const response = await fetch(
+    `/api/updates/${encodeURIComponent(updateId)}/audio`,
+    { cache: "force-cache" },
+  );
+  if (!response.ok) return null;
+  const payload = (await response.json().catch(() => null)) as {
+    ok?: boolean;
+    data?: { audioDataUrl?: string };
+  } | null;
+  return payload?.ok ? (payload.data?.audioDataUrl ?? null) : null;
+}
+
 export type AnalyzeResult = {
   mode: AnalyzeMode;
   data: CombinedBrief;

@@ -38,6 +38,8 @@ export interface ShiftStore {
   setRoomStatus(shiftId: string, status: ShiftStatus): Promise<void>;
   addUpdate(shiftId: string, input: AddUpdateInput): Promise<WorkerUpdate>;
   listUpdates(shiftId: string): Promise<WorkerUpdate[]>;
+  /** Fetch a single update's voice note (base64 data URL) on demand. */
+  getUpdateAudio(updateId: string): Promise<string | null>;
   saveBriefAndTasks(
     shiftId: string,
     result: CombinedBriefAIResult,
@@ -111,6 +113,7 @@ type MemoryData = {
   rooms: Map<string, ShiftRoom>;
   adminPinHashes: Map<string, string>;
   updates: WorkerUpdate[];
+  audioByUpdate: Map<string, string>;
   tasks: ShiftTask[];
   briefs: Array<{ brief: CombinedBrief; result: CombinedBriefAIResult }>;
 };
@@ -122,11 +125,13 @@ function memoryData(): MemoryData {
       rooms: new Map(),
       adminPinHashes: new Map(),
       updates: [],
+      audioByUpdate: new Map(),
       tasks: [],
       briefs: [],
     };
   }
   g.__shiftbrief.adminPinHashes ??= new Map();
+  g.__shiftbrief.audioByUpdate ??= new Map();
   return g.__shiftbrief;
 }
 
@@ -174,17 +179,20 @@ class MemoryStore implements ShiftStore {
     shiftId: string,
     input: AddUpdateInput,
   ): Promise<WorkerUpdate> {
+    const id = newId();
     const update: WorkerUpdate = {
-      id: newId(),
+      id,
       shiftId,
       workerName: input.workerName,
       role: input.role,
       transcript: input.transcript,
-      audioDataUrl: input.audioDataUrl ?? null,
+      hasAudio: Boolean(input.audioDataUrl),
       source: input.source,
       createdAt: now(),
     };
     memoryData().updates.push(update);
+    if (input.audioDataUrl)
+      memoryData().audioByUpdate.set(id, input.audioDataUrl);
     return update;
   }
 
@@ -192,6 +200,10 @@ class MemoryStore implements ShiftStore {
     return memoryData()
       .updates.filter((update) => update.shiftId === shiftId)
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  }
+
+  async getUpdateAudio(updateId: string): Promise<string | null> {
+    return memoryData().audioByUpdate.get(updateId) ?? null;
   }
 
   async saveBriefAndTasks(
@@ -265,16 +277,19 @@ type RoomRow = {
   updated_at: string;
   admin_pin_hash: string | null;
 };
+// Note: audio_data_url is intentionally never selected for lists — it is
+// fetched on demand via getUpdateAudio so blobs don't ride along in polls.
 type UpdateRow = {
   id: string;
   shift_id: string;
   worker_name: string;
   role: string;
   transcript: string;
-  audio_data_url: string | null;
   source: string;
   created_at: string;
 };
+const UPDATE_COLUMNS =
+  "id,shift_id,worker_name,role,transcript,source,created_at";
 type TaskRow = {
   id: string;
   shift_id: string;
@@ -310,14 +325,14 @@ function rowToRoom(row: RoomRow): ShiftRoom {
     updatedAt: row.updated_at,
   };
 }
-function rowToUpdate(row: UpdateRow): WorkerUpdate {
+function rowToUpdate(row: UpdateRow, hasAudio: boolean): WorkerUpdate {
   return {
     id: row.id,
     shiftId: row.shift_id,
     workerName: row.worker_name,
     role: row.role,
     transcript: row.transcript,
-    audioDataUrl: row.audio_data_url,
+    hasAudio,
     source: row.source as UpdateSource,
     createdAt: row.created_at,
   };
@@ -391,6 +406,7 @@ class SupabaseStore implements ShiftStore {
     const rows = await sbRest<UpdateRow[]>("worker_updates", {
       method: "POST",
       prefer: "return=representation",
+      query: `select=${UPDATE_COLUMNS}`,
       body: {
         shift_id: shiftId,
         worker_name: input.workerName,
@@ -400,14 +416,28 @@ class SupabaseStore implements ShiftStore {
         source: input.source,
       },
     });
-    return rowToUpdate(rows[0]);
+    return rowToUpdate(rows[0], Boolean(input.audioDataUrl));
   }
 
   async listUpdates(shiftId: string): Promise<WorkerUpdate[]> {
-    const rows = await sbRest<UpdateRow[]>("worker_updates", {
-      query: `shift_id=eq.${shiftId}&select=*&order=created_at.asc`,
-    });
-    return rows.map(rowToUpdate);
+    const [rows, withAudio] = await Promise.all([
+      sbRest<UpdateRow[]>("worker_updates", {
+        query: `shift_id=eq.${shiftId}&select=${UPDATE_COLUMNS}&order=created_at.asc`,
+      }),
+      sbRest<Array<{ id: string }>>("worker_updates", {
+        query: `shift_id=eq.${shiftId}&select=id&audio_data_url=not.is.null`,
+      }),
+    ]);
+    const audioIds = new Set(withAudio.map((row) => row.id));
+    return rows.map((row) => rowToUpdate(row, audioIds.has(row.id)));
+  }
+
+  async getUpdateAudio(updateId: string): Promise<string | null> {
+    const rows = await sbRest<Array<{ audio_data_url: string | null }>>(
+      "worker_updates",
+      { query: `id=eq.${updateId}&select=audio_data_url&limit=1` },
+    );
+    return rows[0]?.audio_data_url ?? null;
   }
 
   async saveBriefAndTasks(
