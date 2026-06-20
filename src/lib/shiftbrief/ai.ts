@@ -10,6 +10,12 @@ import type { CombinedBriefAIResult, ShiftRoom, WorkerUpdate } from "./types";
 
 const REQUEST_TIMEOUT_MS = 30_000;
 
+// Some providers/models accept `reasoning_effort` (Gemini needs "none" to skip
+// thinking); others reject it (Groq). Only send it when configured.
+const reasoning: { reasoning_effort?: string } = env.AI_REASONING_EFFORT
+  ? { reasoning_effort: env.AI_REASONING_EFFORT }
+  : {};
+
 export function isAIConfigured(): boolean {
   return Boolean(env.AI_BASE_URL && env.AI_API_KEY);
 }
@@ -36,9 +42,7 @@ export async function generateHeadlineWithAI(context: string): Promise<string> {
         model: env.AI_MODEL,
         temperature: 0.65,
         max_tokens: 120,
-        // Disable model "thinking" so output tokens aren't consumed by
-        // reasoning (Gemini 3.x reasons by default). Other providers ignore it.
-        reasoning_effort: "none",
+        ...reasoning,
         messages: [
           {
             role: "system",
@@ -85,7 +89,7 @@ export async function generatePulseWithAI(
         model: env.AI_MODEL,
         temperature: 0.2,
         max_tokens: 300,
-        reasoning_effort: "none",
+        ...reasoning,
         response_format: { type: "json_object" },
         messages: [
           {
@@ -177,9 +181,7 @@ export async function generateBriefWithAI(
         model: env.AI_MODEL,
         temperature: 0.2,
         max_tokens: 2048,
-        // Disable model "thinking" (Gemini 3.x reasons by default and would
-        // otherwise spend the token budget before emitting the JSON).
-        reasoning_effort: "none",
+        ...reasoning,
         response_format: { type: "json_object" },
         messages: [
           { role: "system", content: SYSTEM_PROMPT },
